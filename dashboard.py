@@ -121,9 +121,15 @@ def update_graph(app, df):
             # Total do agrupamento
             total_common_clients = common_clients.shape[0]
             
+            # Total de clientes na base TAGME
+            total_tagme_clients = df[df['Base'] == 'TAGME']['Telefone'].nunique()
+            
+            # Percentual de clientes em comum em relação ao total de clientes na base TAGME
+            percentual_comum = (total_common_clients / total_tagme_clients) * 100
+            
             return html.Div([
                 html.H2('Clientes na TAGME X GCOM', style={'textAlign': 'center'}),
-                html.P(f'Total de clientes em comum entre TAGME e GCOM: {total_common_clients}')
+                html.P(f'Total de clientes identificados: {total_common_clients} | {percentual_comum:.2f}%'),
             ])
         else:
             return None
