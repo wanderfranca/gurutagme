@@ -1,36 +1,50 @@
 import pandas as pd
 from dash import dcc, html, Input, Output, State
 import plotly.graph_objs as go
+from components.sidebar import Sidebar
+import dash_html_components as html
+import dash_bootstrap_components as dbc
 
 def create_layout(app, df):
-    return html.Div(children=[
-        html.Title('Controle TAGME Gurumê', id='title'),  # Definindo o título da página
+    sidebar = Sidebar()
 
-        html.H1(children='Dashboard de Clientes por Base'),
+   # Card para o gráfico de Total de Clientes por Base
+    graph_card = dbc.Card(
+        dbc.CardBody(
+            html.Div([
+                html.H5("Total de Clientes por Base", className="card-title text-center"),
+                html.Div(id="output-container-graph")
+            ])
+        ),
+        className="mb-5",
+        style={'background-color': 'white'},  # Define o fundo do card como transparente
+    )
 
-        html.Div([
-            html.Label('Selecione a Base:'),
-            dcc.Dropdown(
-                id='base-dropdown',
-                options=[
-                    {'label': 'ALL', 'value': 'ALL'},
-                    {'label': 'GCOM', 'value': 'GCOM'},
-                    {'label': 'TAGME', 'value': 'TAGME'}
-                ],
-                value='ALL'
-            ),
-            html.Button("Não Registrados", id="btn-nao-registrados", n_clicks=0)
-        ], style={'width': '20%', 'display': 'inline-block', 'verticalAlign': 'top'}),
 
-        html.Div(id="output-container-button",
-                 children=[],
-                 style={'width': '100%', 'display': 'inline-block', 'verticalAlign': 'top'}),
+    # Card para as informações de Clientes na TAGME X GCOM
+    tagme_gcom_card = dbc.Card(
+        dbc.CardBody(
+            html.Div(id="clientes-gcom-tagme")
+        ),
+        className="mb-5",
+    )
 
-        html.Div(id="output-container-graph",
-                 children=[],
-                 style={'width': '75%', 'display': 'inline-block'}),
+    content = html.Div(id="page-content", children=[
+        dbc.Row([
+            dbc.Col(graph_card, width=5, className="mt-2"),
+            dbc.Col(tagme_gcom_card, width=3),
+        ], align="center"),
+        
+        dbc.Row([
+            dbc.Col(id="output-container-button", width=12),
+        ], align="center", className="my-4"),
+    ])
 
-        html.Div(id="clientes-gcom-tagme")
+    return dbc.Container(fluid=True, children=[
+        dbc.Row([
+            dbc.Col(sidebar, id="sidebar-col", width=3),
+            dbc.Col(content, id="content-col", width=9),
+        ])
     ])
 
 def update_graph(app, df):
@@ -64,13 +78,15 @@ def update_graph(app, df):
                     y=totais,
                     text=totais,
                     textposition='auto',
-                    marker=dict(color=colors)  # Definir cores das barras
+                    marker=dict(color=colors)
                 )
             ],
             'layout': go.Layout(
                 xaxis={'title': 'Base'},
                 yaxis={'title': 'Total de Clientes'},
-                showlegend=False
+                showlegend=False,
+                plot_bgcolor='rgba(0, 0, 0, 0)',
+                paper_bgcolor='rgba(0, 0, 0, 0)'
             )
         }
 
@@ -95,7 +111,7 @@ def update_graph(app, df):
             else:
                 return "Selecione a base GCOM para identificar os clientes não registrados."
         return None
-    
+
     @app.callback(
         Output("clientes-gcom-tagme", "children"),
         [Input('base-dropdown', 'value')]
@@ -116,9 +132,15 @@ def update_graph(app, df):
             # Total do agrupamento
             total_common_clients = common_clients.shape[0]
             
+            # Total de clientes na base TAGME
+            total_tagme_clients = df[df['Base'] == 'TAGME']['Telefone'].nunique()
+            
+            # Percentual de clientes em comum em relação ao total de clientes na base TAGME
+            percentual_comum = (total_common_clients / total_tagme_clients) * 100
+            
             return html.Div([
-                html.H2('Clientes na TAGME X GCOM', style={'textAlign': 'center'}),
-                html.P(f'Total de clientes em comum entre TAGME e GCOM: {total_common_clients}')
+                html.H5('Clientes na TAGME X GCOM', style={'textAlign': 'center'}),
+                html.P(f'Total de clientes identificados: {total_common_clients} | {percentual_comum:.2f}%'),
             ])
         else:
             return None
