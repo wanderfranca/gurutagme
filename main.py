@@ -9,7 +9,7 @@ file_path = '0B.xlsx'
 df = pd.read_excel(file_path)
 
 # Add 55 nos telefones
-df['Telefone'] = df['Telefone'].apply(add_prefixo_brasil)
+df['Telefone'] = df['Telefone'].apply(lambda x: '55' + str(x) if pd.notna(x) and not str(x).startswith('55') else x)
 
 # Remover linhas duplicadas
 df = df.drop_duplicates()

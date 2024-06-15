@@ -1,3 +1,5 @@
+import select
+import comm
 import pandas as pd
 from dash import dcc, html, Input, Output, State
 import plotly.graph_objs as go
@@ -101,13 +103,29 @@ def update_graph(app, df):
         Output("clientes-gcom-tagme", "children"),
         [Input('base-dropdown', 'value')]
     )
+
+
     def display_gcom_tagme_stats(selected_base):
         if selected_base == 'ALL':
-            gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
-            tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
-            common_clients = gcom_clients.intersection(tagme_clients)
+            # Remover espaços em branco extras e converter para string para padronizar o formato do telefone
+            df['Telefone'] = df['Telefone'].astype(str).str.strip()
+            
+            # Remover os registros com valores nulos na coluna 'Telefone'
+            df_cleaned = df.dropna(subset=['Telefone'])
+            
+            # Agrupar os dados
+            grouped_data = df_cleaned.groupby(['Telefone', 'Base']).size().unstack(fill_value=0)
+            
+            common_clients = grouped_data[(grouped_data['GCOM'] > 0) & (grouped_data['TAGME'] > 0)]
+            
+            # Total do agrupamento
+            total_common_clients = common_clients.shape[0]
             
             return html.Div([
-                html.H2('Clientes em GCOM X TAGME', style={'textAlign': 'center'}),
-                html.P(f'Clientes em ambas as bases: {len(common_clients)}')
+                html.H2('Clientes na TAGME X GCOM', style={'textAlign': 'center'}),
+                html.P(f'Total de clientes em comum entre TAGME e GCOM: {total_common_clients}')
             ])
+        else:
+            return None
+
+
