@@ -111,5 +111,3 @@ def update_graph(app, df):
                 html.H2('Clientes em GCOM X TAGME', style={'textAlign': 'center'}),
                 html.P(f'Clientes em ambas as bases: {len(common_clients)}')
             ])
-        else:
-            return None

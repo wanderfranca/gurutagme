@@ -8,11 +8,6 @@ file_path = '0B.xlsx'
 # Carregar os dados
 df = pd.read_excel(file_path)
 
-def add_prefixo_brasil(phone):
-    if not str(phone).startswith('55'):
-        return '55'+str(phone)
-    return phone
-
 # Add 55 nos telefones
 df['Telefone'] = df['Telefone'].apply(add_prefixo_brasil)
 
