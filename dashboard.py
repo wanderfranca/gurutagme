@@ -1,5 +1,3 @@
-import select
-import comm
 import pandas as pd
 from dash import dcc, html, Input, Output, State
 import plotly.graph_objs as go
@@ -70,7 +68,6 @@ def update_graph(app, df):
                 )
             ],
             'layout': go.Layout(
-                title='Total de Clientes por Base',
                 xaxis={'title': 'Base'},
                 yaxis={'title': 'Total de Clientes'},
                 showlegend=False
@@ -103,8 +100,6 @@ def update_graph(app, df):
         Output("clientes-gcom-tagme", "children"),
         [Input('base-dropdown', 'value')]
     )
-
-
     def display_gcom_tagme_stats(selected_base):
         if selected_base == 'ALL':
             # Remover espaços em branco extras e converter para string para padronizar o formato do telefone
@@ -127,5 +122,3 @@ def update_graph(app, df):
             ])
         else:
             return None
-
-
