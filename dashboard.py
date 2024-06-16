@@ -1,7 +1,5 @@
 import pandas as pd
-from dash import dcc, html, Input, Output, State
 import plotly.graph_objs as go
-from components.sidebar import Sidebar
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 
@@ -19,7 +17,6 @@ def create_layout(app, df):
         className="mb-5",
         style={'background-color': 'white'},  # Define o fundo do card como transparente
     )
-
 
     # Card para as informações de Clientes na TAGME X GCOM
     tagme_gcom_card = dbc.Card(
@@ -53,7 +50,6 @@ def update_graph(app, df):
         [Input('base-dropdown', 'value')]
     )
     def display_graph(selected_base):
-        # Verificar se a coluna 'Base' existe no DataFrame
         if 'Base' not in df.columns:
             return html.Div([
                 html.H4("Erro: Coluna 'Base' não encontrada no DataFrame")
@@ -68,7 +64,6 @@ def update_graph(app, df):
         bases = total_por_base.index
         totais = total_por_base.values
 
-        # Cores dos gráficos
         colors = ['blue' if base == 'GCOM' else 'orange' for base in bases]
 
         figure = {
@@ -100,17 +95,6 @@ def update_graph(app, df):
         [Input("btn-nao-registrados", "n_clicks")],
         [State("base-dropdown", "value")]
     )
-    def display_nao_registrados(n_clicks, selected_base):
-        if n_clicks > 0:
-            if selected_base == 'GCOM':
-                gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
-                tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
-                nao_registrados = gcom_clients - tagme_clients
-                lista_nao_registrados = html.Ul([html.Li(nome) for nome in df[df['Telefone'].isin(nao_registrados)]['Nome']])
-                return lista_nao_registrados
-            else:
-                return "Selecione a base GCOM para identificar os clientes não registrados."
-        return None
 
     @app.callback(
         Output("clientes-gcom-tagme", "children"),
@@ -120,8 +104,6 @@ def update_graph(app, df):
         if selected_base == 'ALL':
             # Remover espaços em branco extras e converter para string para padronizar o formato do telefone
             df['Telefone'] = df['Telefone'].astype(str).str.strip()
-            
-            # Remover os registros com valores nulos na coluna 'Telefone'
             df_cleaned = df.dropna(subset=['Telefone'])
             
             # Agrupar os dados
