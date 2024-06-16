@@ -2,11 +2,21 @@ import pandas as pd
 import plotly.graph_objs as go
 import dash_html_components as html
 import dash_bootstrap_components as dbc
+import base64
+import os
+import datetime
+import io
 
-def create_layout(app, df):
-    sidebar = Sidebar()
+from dash import dcc, html, Input, Output, State, clientside_callback  # noqa: F811
+from components.sidebar import Sidebar
+from components.grafico import create_graph
+from dash import dash_table
+from dash.exceptions import PreventUpdate
 
-   # Card para o gráfico de Total de Clientes por Base
+def create_layout(app, create_graph, bases, lojas):  # noqa: F811
+    sidebar = Sidebar(bases, lojas)
+
+    # Card para o gráfico de Total de Clientes por Base
     graph_card = dbc.Card(
         dbc.CardBody(
             html.Div([
@@ -26,15 +36,43 @@ def create_layout(app, df):
         className="mb-5",
     )
 
+    # Card para os clientes não registrados
+    not_registered_card = dbc.Card(
+        dbc.CardBody(
+            [
+                html.H5("Clientes Não Registrados", className="card-title text-center"),
+                html.Div(id="output-container-not-registered")
+            ]
+        ),
+        className="mb-5",
+    )
+
     content = html.Div(id="page-content", children=[
         dbc.Row([
             dbc.Col(graph_card, width=5, className="mt-2"),
             dbc.Col(tagme_gcom_card, width=3),
         ], align="center"),
-        
+
+        dbc.Row([
+            dbc.Col(not_registered_card, width=12)
+        ], align="center"),
+
         dbc.Row([
             dbc.Col(id="output-container-button", width=12),
         ], align="center", className="my-4"),
+
+        dbc.Row([
+            dbc.Col(
+                dbc.Button(
+                    "Exportar para Excel",
+                    id="export-excel-button",
+                    color="primary",
+                    className="mr-2 btnguruverde",  # Adiciona a classe 'btnguruverde'
+                    style={'display': 'none'}  # Ocultar inicialmente o botão de exportação
+                ),
+                width=12
+            )
+        ])
     ])
 
     return dbc.Container(fluid=True, children=[
@@ -47,25 +85,34 @@ def create_layout(app, df):
 def update_graph(app, df):
     @app.callback(
         Output('output-container-graph', 'children'),
-        [Input('base-dropdown', 'value')]
+        [Input('base-dropdown', 'value'),
+         Input('loja-dropdown', 'value')]
     )
-    def display_graph(selected_base):
-        if 'Base' not in df.columns:
+    def display_graph(selected_base, selected_loja):
+        # Verificar se as colunas 'Base' e 'Loja' existem no DataFrame
+        if 'Base' not in df.columns or 'Loja' not in df.columns:
             return html.Div([
-                html.H4("Erro: Coluna 'Base' não encontrada no DataFrame")
+                html.H4("Erro: Coluna 'Base' ou 'Loja' não encontrada no DataFrame")
             ])
 
+        # Filtrar o DataFrame de acordo com a base e a loja selecionadas
         if selected_base == 'ALL':
             filtered_df = df
         else:
             filtered_df = df[df['Base'] == selected_base]
 
+        if selected_loja != 'ALL':
+            filtered_df = filtered_df[filtered_df['Loja'] == selected_loja]
+
+        # Calcular o total de clientes por base
         total_por_base = filtered_df['Base'].value_counts()
         bases = total_por_base.index
         totais = total_por_base.values
 
+        # Cores dos gráficos
         colors = ['blue' if base == 'GCOM' else 'orange' for base in bases]
 
+        # Gerar o gráfico
         figure = {
             'data': [
                 go.Bar(
@@ -95,6 +142,16 @@ def update_graph(app, df):
         [Input("btn-nao-registrados", "n_clicks")],
         [State("base-dropdown", "value")]
     )
+    def display_nao_registrados(n_clicks, selected_base):
+        if n_clicks > 0:
+            if selected_base == 'GCOM':
+                gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
+                tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
+                nao_registrados = gcom_clients - tagme_clients
+                lista_nao_registrados = html.Ul([html.Li(nome) for nome in df[df['Telefone'].isin(nao_registrados)]['Nome']])
+            else:
+                return "Selecione a base GCOM para identificar os clientes não registrados."
+        return None
 
     @app.callback(
         Output("clientes-gcom-tagme", "children"),
@@ -104,6 +161,8 @@ def update_graph(app, df):
         if selected_base == 'ALL':
             # Remover espaços em branco extras e converter para string para padronizar o formato do telefone
             df['Telefone'] = df['Telefone'].astype(str).str.strip()
+            
+            # Remover os registros com valores nulos na coluna 'Telefone'
             df_cleaned = df.dropna(subset=['Telefone'])
             
             # Agrupar os dados
@@ -126,3 +185,89 @@ def update_graph(app, df):
             ])
         else:
             return None
+    
+    # Callback para exibir os clientes não registrados na tabela
+    @app.callback(
+        Output("output-container-not-registered", "children"),
+        [Input("btn-nao-registrados", "n_clicks")],
+        [State("base-dropdown", "value")]
+    )
+    def display_nao_registrados_table(n_clicks, selected_base):
+        if n_clicks > 0:
+            if selected_base == 'GCOM':
+                gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
+                tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
+                nao_registrados = gcom_clients - tagme_clients
+                df_nao_registrados = df[df['Telefone'].isin(nao_registrados)]
+                return generate_table(df_nao_registrados)
+            else:
+                return "Selecione a base GCOM para identificar os clientes não registrados."
+        return None
+
+   # Callbacks para exportar para Excel
+    @app.callback(
+        Output("export-excel-button", "style"),
+        [Input("table", "data")]
+    )
+    def update_export_button_visibility(data):
+        if data:
+            return {'display': 'inline-block'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
+        Output("export-excel-button", "href"),
+        [Input("table", "data")],
+        prevent_initial_call=True
+    )
+    def export_to_excel(data):
+        if not data:
+            raise PreventUpdate
+
+        dataframe = pd.DataFrame(data)
+        output = io.BytesIO()
+        writer = pd.ExcelWriter(output, engine='xlsxwriter')
+        dataframe.to_excel(writer, index=False, sheet_name='Sheet1')
+        writer.close()  # Usar writer.close() em vez de writer.save()
+        output.seek(0)
+        excel_data = base64.b64encode(output.read()).decode()
+
+        # Nome do arquivo
+        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        filename = f"export_clientes_n_regis_{now}.xlsx"
+
+        # Diretório de relatórios
+        reports_dir = "relatorios"
+
+        # Criação do diretório, se não existir
+        if not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
+
+        filepath = os.path.join(reports_dir, filename)
+
+        with open(filepath, "wb") as f:
+            f.write(base64.b64decode(excel_data))
+
+        return f'/{filepath}'
+
+    # Função para criar a tabela com paginação
+    def generate_table(dataframe, page_size=25):
+        return dash_table.DataTable(
+            id='table',
+            columns=[
+                {'name': 'Loja', 'id': 'Loja'},
+                {'name': 'Nome', 'id': 'Nome'},
+                {'name': 'Telefone', 'id': 'Telefone'},
+                {'name': 'DataChegada', 'id': 'DataChegada'},
+            ],
+            data=dataframe[['Loja', 'Nome', 'Telefone', 'DataChegada']].to_dict('records'),
+            page_size=page_size
+        )
+
+   # Adiciona a classe 'btnguruverde' ao botão de exportar para o Excel
+    @app.callback(
+        Output("export-excel-button", "className"),
+        [Input("export-excel-button", "id")]
+    )
+    def add_class_to_export_excel_button(button_id):
+        return "btnguruverde"
