@@ -167,7 +167,7 @@ def update_graph(app, df):
             else:
                 tagme_gcom_stats = html.Div([
                     html.H5('TAGME X GCOM', style={'textAlign': 'center'}),
-                    html.P('Comparação de Dados entre GCOM X TAGME não identificados no filtro ou a loja ainda não realizou nenhuma identificação.', style={'textAlign': 'center'}),
+                    html.P('Comparação de Dados entre GCOM X TAGME não identificados no filtro ou a loja ainda não realizou nenhuma identifi', style={'textAlign': 'center'}),
                 ])
         else:
             tagme_gcom_stats = html.Div([
@@ -184,13 +184,13 @@ def update_graph(app, df):
     )
     def display_nao_registrados(n_clicks, selected_base):
         if n_clicks > 0:
-            if selected_base == 'GCOM':
+            if selected_base == 'TAGME':
                 gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
                 tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
                 nao_registrados = gcom_clients - tagme_clients
                 lista_nao_registrados = html.Ul([html.Li(nome) for nome in df[df['Telefone'].isin(nao_registrados)]['Nome']])
             else:
-                return "Selecione a base GCOM para identificar os clientes não registrados."
+                return "Selecione a base TAGME para identificar os clientes não registrados."
         return None
 
     @app.callback(
@@ -200,14 +200,14 @@ def update_graph(app, df):
     )
     def display_nao_registrados_table(n_clicks, selected_base):
         if n_clicks > 0:
-            if selected_base == 'GCOM':
+            if selected_base == 'TAGME':
                 gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
                 tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
                 nao_registrados = gcom_clients - tagme_clients
                 df_nao_registrados = df[df['Telefone'].isin(nao_registrados)]
                 return generate_table(df_nao_registrados)
             else:
-                return "Selecione a base GCOM para identificar os clientes não registrados."
+                return "Selecione a base TAGME para identificar os clientes não registrados."
         return None
 
     @app.callback(
@@ -262,7 +262,7 @@ def update_graph(app, df):
             id='table',
             columns=[{"name": i, "id": i} for i in dataframe.columns],
             data=dataframe.to_dict('records'),
-            page_size=10,
+            page_size=50,
             style_table={'overflowX': 'auto'},
             style_cell={'textAlign': 'left'},
             style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'}
