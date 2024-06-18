@@ -274,7 +274,7 @@ def update_graph(app, df):
         excel_data = base64.b64encode(output.read()).decode()
 
         # Nome do arquivo
-        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         filename = f"export_clientes_n_regis_{now}.xlsx"
 
         # Diretório de relatórios
