@@ -1,23 +1,30 @@
 import pandas as pd
 from dash import Dash
+import dash_bootstrap_components as dbc
+from components.grafico import create_graph
 from dashboard import create_layout, update_graph
 
-# arquivo XLSX
+# Caminho do arquivo XLSX
 file_path = '0B.xlsx' 
 
 # Carregar os dados
 df = pd.read_excel(file_path)
 
-# Add 55 nos telefones
-df['Telefone'] = df['Telefone'].apply(lambda x: '55' + str(x) if pd.notna(x) and not str(x).startswith('55') else x)
+# Extrair lojas únicas do DataFrame
+lojas_unicas = df['Loja'].unique().tolist()
+
+# Adicionar o código do país (55) aos telefones
+df['Telefone'] = df['Telefone'].apply(lambda x: '55' + str(x).strip() if pd.notna(x) and not str(x).strip().startswith('55') else str(x).strip())
 
 # Remover linhas duplicadas
 df = df.drop_duplicates()
 
-app = Dash(__name__)
+# Inicializar a aplicação Dash com um tema Bootstrap
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app.config.suppress_callback_exceptions = True
 
-# Configurar o layout da aplicação
-app.layout = create_layout(app, df)
+# Passar as opções de bases e lojas para a função create_layout
+app.layout = create_layout(app, create_graph, lojas_unicas, df['Loja'].unique())
 
 # Configurar os callbacks
 update_graph(app, df)
