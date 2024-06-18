@@ -26,7 +26,7 @@ def create_layout(app, create_graph, bases, lojas):
             ])
         ),
         className="mb-5",
-        style={'background-color': 'white'},  # Define o fundo do card como transparente
+        style={'background-color': 'white'}, 
     )
 
     # Card informações de Clientes na TAGME X GCOM
@@ -187,7 +187,8 @@ def update_graph(app, df):
             if selected_base == 'TAGME':
                 gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
                 tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
-                nao_registrados = gcom_clients - tagme_clients
+                mesa_clients = set(df[df['MesaComanda'].notna()]['Telefone'])
+                nao_registrados = gcom_clients - tagme_clients - mesa_clients
                 lista_nao_registrados = html.Ul([html.Li(nome) for nome in df[df['Telefone'].isin(nao_registrados)]['Nome']])
             else:
                 return "Selecione a base TAGME para identificar os clientes não registrados."
@@ -204,6 +205,8 @@ def update_graph(app, df):
                 gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
                 tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
                 nao_registrados = gcom_clients - tagme_clients
+                mesa_clients = set(df[df['MesaComanda'].notna()]['Telefone'])
+                nao_registrados = gcom_clients - tagme_clients - mesa_clients
                 df_nao_registrados = df[df['Telefone'].isin(nao_registrados)]
                 return generate_table(df_nao_registrados)
             else:
