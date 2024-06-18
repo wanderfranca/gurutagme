@@ -1,3 +1,4 @@
+from click import group
 import pandas as pd
 import plotly.graph_objs as go
 import dash_html_components as html
@@ -77,8 +78,8 @@ def create_layout(app, create_graph, bases, lojas):
 
     return dbc.Container(fluid=True, children=[
         dbc.Row([
-            dbc.Col(sidebar, id="sidebar-col", width=3),
-            dbc.Col(content, id="content-col", width=9),
+            dbc.Col(sidebar, id="sidebar-col", width=2),
+            dbc.Col(content, id="content-col", width=10),
         ])
     ])
 
@@ -179,16 +180,22 @@ def update_graph(app, df):
     @app.callback(
         Output("output-container-button", "children"),
         [Input("btn-nao-registrados", "n_clicks")],
-        [State("base-dropdown", "value")]
+        [State("base-dropdown", "value"), State("loja-dropdown", "value")]
     )
-    def display_nao_registrados(n_clicks, selected_base):
+    def display_nao_registrados(n_clicks, selected_base, selected_loja):
         if n_clicks > 0:
             if selected_base == 'TAGME':
-                gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
-                tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
-                mesa_clients = set(df[df['MesaComanda'].notna()]['Telefone'])
+                # Filtrar o DataFrame com base nos filtros selecionados
+                filtered_df = df.copy()
+                if selected_loja != 'ALL':
+                    filtered_df = filtered_df[filtered_df['Loja'] == selected_loja]
+
+                gcom_clients = set(filtered_df[filtered_df['Base'] == 'GCOM']['Telefone'])
+                tagme_clients = set(filtered_df[filtered_df['Base'] == 'TAGME']['Telefone'])
+                mesa_clients = set(filtered_df[filtered_df['MesaComanda'].notna()]['Telefone'])
                 nao_registrados = gcom_clients - tagme_clients - mesa_clients
-                lista_nao_registrados = html.Ul([html.Li(nome) for nome in df[df['Telefone'].isin(nao_registrados)]['Nome']])
+                
+                lista_nao_registrados = html.Ul([html.Li(nome) for nome in filtered_df[filtered_df['Telefone'].isin(nao_registrados)]['Nome']])
             else:
                 return "Selecione a base TAGME para identificar os clientes não registrados."
         return None
@@ -196,17 +203,25 @@ def update_graph(app, df):
     @app.callback(
         Output("output-container-not-registered", "children"),
         [Input("btn-nao-registrados", "n_clicks")],
-        [State("base-dropdown", "value")]
+        [State("base-dropdown", "value"), State("loja-dropdown", "value")]
     )
-    def display_nao_registrados_table(n_clicks, selected_base):
+    def display_nao_registrados_table(n_clicks, selected_base, selected_loja):
         if n_clicks > 0:
             if selected_base == 'TAGME':
-                gcom_clients = set(df[df['Base'] == 'GCOM']['Telefone'])
-                tagme_clients = set(df[df['Base'] == 'TAGME']['Telefone'])
-                nao_registrados = gcom_clients - tagme_clients
-                mesa_clients = set(df[df['MesaComanda'].notna()]['Telefone'])
-                nao_registrados = gcom_clients - tagme_clients - mesa_clients
-                df_nao_registrados = df[df['Telefone'].isin(nao_registrados)]
+                # Filtrar o DataFrame com base nos filtros selecionados
+                filtered_df = df.copy()
+                if selected_loja != 'ALL':
+                    filtered_df = filtered_df[filtered_df['Loja'] == selected_loja]
+
+                gcom_clients = set(filtered_df[filtered_df['Base'] == 'GCOM']['Telefone'])
+                tagme_clients = set(filtered_df[filtered_df['Base'] == 'TAGME']['Telefone'])
+                
+                # Encontrar os clientes da TAGME que não estão na base GCOM
+                nao_registrados = tagme_clients - gcom_clients
+                
+                # Filtrar o DataFrame para obter os dados dos clientes não registrados
+                df_nao_registrados = filtered_df[filtered_df['Telefone'].isin(nao_registrados)]
+                
                 return generate_table(df_nao_registrados)
             else:
                 return "Selecione a base TAGME para identificar os clientes não registrados."

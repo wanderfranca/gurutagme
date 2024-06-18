@@ -5,13 +5,13 @@ body {
 }
 
 .sidebar {
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
     position: fixed;
-    width: 20%;
+    width: 15%;
     height: 100%;
     overflow: auto;
     box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
-    margin-right: 20px;
+    margin-right: 10px;
 }
 
 .btnguruverde {
