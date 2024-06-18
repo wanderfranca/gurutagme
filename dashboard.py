@@ -1,4 +1,3 @@
-from click import group
 import pandas as pd
 import plotly.graph_objs as go
 import dash_html_components as html
@@ -212,7 +211,6 @@ def update_graph(app, df):
             else:
                 return "Selecione a base TAGME para identificar os clientes não registrados."
         return None
-
 
     def display_gcom_tagme_stats(selected_base):
         if selected_base == 'ALL':
