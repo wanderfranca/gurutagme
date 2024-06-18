@@ -28,7 +28,7 @@ def create_layout(app, create_graph, bases, lojas):  # noqa: F811
         style={'background-color': 'white'},  # Define o fundo do card como transparente
     )
 
-    # Card para as informações de Clientes na TAGME X GCOM
+    # Card informações de Clientes na TAGME X GCOM
     tagme_gcom_card = dbc.Card(
         dbc.CardBody(
             html.Div(id="clientes-gcom-tagme")
@@ -36,7 +36,7 @@ def create_layout(app, create_graph, bases, lojas):  # noqa: F811
         className="mb-5",
     )
 
-    # Card para os clientes não registrados
+    # Card clientes não registrados
     not_registered_card = dbc.Card(
         dbc.CardBody(
             [
@@ -180,8 +180,8 @@ def update_graph(app, df):
             percentual_comum = (total_common_clients / total_tagme_clients) * 100
             
             return html.Div([
-                html.H5('Clientes na TAGME X GCOM', style={'textAlign': 'center'}),
-                html.P(f'Total de clientes identificados: {total_common_clients} | {percentual_comum:.2f}%'),
+                html.H5('TAGME X GCOM', style={'textAlign': 'center'}),
+                html.P(f'Total de clientes identificados: {total_common_clients} | {percentual_comum:.2f}%', style={'textAlign': 'center'}),
             ])
         else:
             return None
