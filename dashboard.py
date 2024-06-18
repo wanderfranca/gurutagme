@@ -204,7 +204,6 @@ def update_graph(app, df):
                 return "Selecione a base GCOM para identificar os clientes não registrados."
         return None
 
-   # Callbacks para exportar para Excel
     @app.callback(
         Output("export-excel-button", "style"),
         [Input("table", "data")]
@@ -263,11 +262,3 @@ def update_graph(app, df):
             data=dataframe[['Loja', 'Nome', 'Telefone', 'DataChegada']].to_dict('records'),
             page_size=page_size
         )
-
-   # Adiciona a classe 'btnguruverde' ao botão de exportar para o Excel
-    @app.callback(
-        Output("export-excel-button", "className"),
-        [Input("export-excel-button", "id")]
-    )
-    def add_class_to_export_excel_button(button_id):
-        return "btnguruverde"
